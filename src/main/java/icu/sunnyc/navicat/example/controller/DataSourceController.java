@@ -5,7 +5,7 @@ import icu.sunnyc.navicat.example.entity.bo.CommonResult;
 import icu.sunnyc.navicat.example.entity.dto.DataSourceDTO;
 import icu.sunnyc.navicat.example.entity.po.DataSourcePO;
 import icu.sunnyc.navicat.example.service.DataSourceService;
-import icu.sunnyc.navicat.example.utils.DbUtil;
+import icu.sunnyc.navicat.example.utils.DbPoolUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +38,7 @@ public class DataSourceController {
     @PostMapping("/connect")
     @ApiOperation(value = "通过数据源信息连接数据库")
     public CommonResult connect(@RequestBody DataSourceDTO dataSource) {
-        Connection connection = DbUtil.getConnection(dataSource.getHost(), dataSource.getPort(),
+        Connection connection = DbPoolUtil.getConnection(dataSource.getHost(), dataSource.getPort(),
                 dataSource.getUsername(), dataSource.getPassword());
         return connection == null ? CommonResult.failed("数据库连接失败") : CommonResult.success().setMessage("数据库连接成功！");
     }

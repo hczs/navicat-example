@@ -1,5 +1,6 @@
 package icu.sunnyc.navicat.example.entity.vo;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -8,6 +9,7 @@ import lombok.Data;
  * @date 2022/9/23 16:40
  */
 @Data
+@Builder
 public class ProcessVO {
 
     private Long id;

@@ -16,4 +16,9 @@ public class CommandConstant {
      * 查询所有正在运行的线程
      */
     public static final String QUERY_PROCESS_LIST = "SHOW PROCESSLIST";
+
+    /**
+     * 终止线程
+     */
+    public static final String KILL_PROCESS = "KILL ";
 }

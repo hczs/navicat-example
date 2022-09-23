@@ -3,6 +3,7 @@ package icu.sunnyc.navicat.example.entity.bo;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * @author houcheng
@@ -11,6 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @Builder
+@ToString
 @EqualsAndHashCode
 public class DataSourceBO {
 

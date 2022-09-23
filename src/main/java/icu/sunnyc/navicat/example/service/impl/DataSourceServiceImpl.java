@@ -3,12 +3,13 @@ package icu.sunnyc.navicat.example.service.impl;
 import icu.sunnyc.navicat.example.entity.po.DataSourcePO;
 import icu.sunnyc.navicat.example.repository.DataSourceRepository;
 import icu.sunnyc.navicat.example.service.DataSourceService;
-import icu.sunnyc.navicat.example.utils.DbUtil;
+import icu.sunnyc.navicat.example.utils.DbPoolUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author houcheng
@@ -33,13 +34,18 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     @Override
     public DataSourcePO getDataSourceById(Long dataSourceId) {
-        return dataSourceRepository.getReferenceById(dataSourceId);
+        Optional<DataSourcePO> dataSourceOpt = dataSourceRepository.findById(dataSourceId);
+        return dataSourceOpt.orElse(null);
     }
 
     @Override
     public Connection connectionByDataSourceId(Long dataSourceId) {
-        DataSourcePO dataSource = dataSourceRepository.getReferenceById(dataSourceId);
-        return DbUtil.getConnection(dataSource.getHost(), dataSource.getPort(),
+        DataSourcePO dataSource = getDataSourceById(dataSourceId);
+        if (dataSource == null) {
+            return null;
+        }
+        return DbPoolUtil.getConnection(dataSource.getHost(), dataSource.getPort(),
                 dataSource.getUsername(), dataSource.getPassword());
+
     }
 }
