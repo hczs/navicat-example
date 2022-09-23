@@ -1,5 +1,6 @@
 package icu.sunnyc.navicat.example;
 
+import icu.sunnyc.navicat.example.constant.CommandConstant;
 import icu.sunnyc.navicat.example.utils.DbUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,13 +17,13 @@ import java.sql.Statement;
  * @date 2022/9/22 19:02
  */
 @SpringBootTest
-public class DbUtilTest {
+class DbUtilTest {
 
     @Test
     void testCreateConnection() throws SQLException {
-        Connection connection = DbUtil.createConnection("127.0.0.1", 3306, "root", "123456");
+        Connection connection = DbUtil.getConnection("127.0.0.1", 3306, "root", "123456");
         Statement statement = connection.createStatement();
-        ResultSet res = statement.executeQuery("show databases ");
+        ResultSet res = statement.executeQuery(CommandConstant.QUERY_DATABASES);
         while (res.next()) {
             System.out.println(res.getString("Database"));
         }
