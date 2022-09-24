@@ -4,12 +4,17 @@ import cn.hutool.core.util.StrUtil;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import icu.sunnyc.navicat.example.entity.bo.DataSourceBO;
-import icu.sunnyc.navicat.example.exception.NavicatException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,6 +32,7 @@ public class DbPoolUtil {
 
     /**
      * 获取数据库连接
+     * 返回的这个 Connection 是 HikariCP 连接池创建的代理实现，所以可以放心 close，close 就是把连接归还池中
      *
      * @param host 主机名
      * @param port 端口
@@ -41,6 +47,7 @@ public class DbPoolUtil {
 
     /**
      * 获取数据库连接对象
+     * 返回的这个 Connection 是 HikariCP 连接池创建的代理实现，所以可以放心 close，close 就是把连接归还池中
      *
      * @param url jdbc连接url
      * @param username 用户名
@@ -55,12 +62,8 @@ public class DbPoolUtil {
             log.debug("使用缓存中的数据库连接池；数据库对象：{} 连接池：{}", datasource, hikariDataSource);
             return hikariDataSource.getConnection();
         }
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        hikariConfig.setUsername(username);
-        hikariConfig.setPassword(password);
-        hikariConfig.setJdbcUrl(url);
-        HikariDataSource dataSourcePool = new HikariDataSource(hikariConfig);
+        HikariConfig poolConfig = getPoolConfig(url, username, password);
+        HikariDataSource dataSourcePool = new HikariDataSource(poolConfig);
         CONNECTION_CACHE.put(datasource, dataSourcePool);
         log.debug("已将数据库连接池放入缓存；数据库对象：{} 连接池：{}", datasource, hikariDataSource);
         return dataSourcePool.getConnection();
@@ -73,12 +76,10 @@ public class DbPoolUtil {
      * @param sql 查询语句 sql
      * @return List<Map<String,Object>>
      */
+    @SneakyThrows
     public static List<Map<String,Object>> executeQueryList(Connection connection, String sql) {
         try (Statement statement = connection.createStatement()){
             return getResultListMap(statement.executeQuery(sql));
-        } catch (SQLException e) {
-            log.error("SQL 语句执行出错", e);
-            throw new NavicatException("SQL 语句执行出错");
         }
     }
 
@@ -89,12 +90,10 @@ public class DbPoolUtil {
      * @param sql 查询 sql 语句
      * @return 对象 map
      */
+    @SneakyThrows
     public static Map<String, String> executeQueryOne(Connection connection, String sql) {
         try (Statement statement = connection.createStatement()){
             return getResultMap(statement.executeQuery(sql));
-        } catch (SQLException e) {
-            log.error("SQL 语句执行出错", e);
-            throw new NavicatException("SQL 语句执行出错");
         }
     }
 
@@ -105,13 +104,11 @@ public class DbPoolUtil {
      * @param sql sql语句
      * @return 是否成功执行
      */
+    @SneakyThrows
     public static boolean execute(Connection connection, String sql) {
         try (Statement statement = connection.createStatement()){
             statement.execute(sql);
             return true;
-        } catch (SQLException e) {
-            log.error("SQL 语句执行出错", e);
-            throw new NavicatException("SQL 语句执行出错");
         }
     }
 
@@ -153,6 +150,38 @@ public class DbPoolUtil {
             resultMap.put(key, value);
         }
         return resultMap;
+    }
+
+    /**
+     * 获取连接池配置配置
+     *
+     * @param url 数据库连接url
+     * @param username 用户名
+     * @param password 密码
+     * @return HikariConfig
+     */
+    private static HikariConfig getPoolConfig(String url, String username, String password) {
+        HikariConfig hikariConfig = new HikariConfig();
+        // 基础信息设置
+        hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        hikariConfig.setUsername(username);
+        hikariConfig.setPassword(password);
+        hikariConfig.setJdbcUrl(url);
+        // 最小空闲连接
+        hikariConfig.setMinimumIdle(2);
+        // 最大连接数
+        hikariConfig.setMaximumPoolSize(20);
+        // 空闲连接超时时间（毫秒）
+        hikariConfig.setIdleTimeout(30_000);
+        // 连接池名称，设置成一眼就能看出来是哪个数据源的
+        hikariConfig.setPoolName(StrUtil.format("{}#{}#{}", url, username, password));
+        // 连接最大存活时间（毫秒）
+        hikariConfig.setMaxLifetime(1800_000);
+        // 连接超时时间
+        hikariConfig.setConnectionTimeout(30000);
+        // 测试连接是否可用的查询语句
+        hikariConfig.setConnectionTestQuery("select 1");
+        return hikariConfig;
     }
 
 }
