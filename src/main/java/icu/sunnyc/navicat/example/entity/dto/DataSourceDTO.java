@@ -13,6 +13,11 @@ import lombok.ToString;
 public class DataSourceDTO {
 
     /**
+     * 数据源名称
+     */
+    private String dataSourceName;
+
+    /**
      * 主机地址
      */
     private String host;
@@ -25,7 +30,7 @@ public class DataSourceDTO {
     /**
      * 用户名
      */
-    private String username;
+    private String userName;
 
     /**
      * 密码

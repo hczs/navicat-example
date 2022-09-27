@@ -4,7 +4,7 @@ import icu.sunnyc.navicat.example.constant.CommandConstant;
 import icu.sunnyc.navicat.example.entity.bo.CommonResult;
 import icu.sunnyc.navicat.example.entity.vo.ProcessVO;
 import icu.sunnyc.navicat.example.service.DataSourceService;
-import icu.sunnyc.navicat.example.utils.DbPoolUtil;
+import icu.sunnyc.navicat.example.utils.DbUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.SneakyThrows;
@@ -37,9 +37,9 @@ public class ProcessController {
     @GetMapping("/list/{dataSourceId}")
     @ApiOperation(value = "查询指定数据源下所有线程信息")
     @SneakyThrows
-    public CommonResult list(@PathVariable("dataSourceId") Long dataSourceId) {
+    public CommonResult list(@PathVariable("dataSourceId") String dataSourceId) {
         try (Connection connection = dataSourceService.connectionByDataSourceId(dataSourceId)) {
-            List<Map<String, Object>> maps = DbPoolUtil.executeQueryList(connection, CommandConstant.QUERY_PROCESS_LIST);
+            List<Map<String, Object>> maps = DbUtil.executeQueryList(connection, CommandConstant.QUERY_PROCESS_LIST);
             ArrayList<ProcessVO> processInfoList = new ArrayList<>();
             for (Map<String, Object> map : maps) {
                 ProcessVO processInfo = ProcessVO.builder()
@@ -61,10 +61,10 @@ public class ProcessController {
     @GetMapping("/kill/{dataSourceId}/{processId}")
     @ApiOperation(value = "终止指定线程")
     @SneakyThrows
-    public CommonResult kill(@PathVariable("dataSourceId") Long dataSourceId,
+    public CommonResult kill(@PathVariable("dataSourceId") String dataSourceId,
                              @PathVariable("processId") Long processId) {
         try (Connection connection = dataSourceService.connectionByDataSourceId(dataSourceId)) {
-            boolean success = DbPoolUtil.execute(connection, CommandConstant.KILL_PROCESS + processId);
+            boolean success = DbUtil.execute(connection, CommandConstant.KILL_PROCESS + processId);
             return success ? CommonResult.success().setMessage("线程终止成功") : CommonResult.failed("终止线程失败");
         }
     }
