@@ -1,9 +1,10 @@
 package icu.sunnyc.navicat.example.controller;
 
+import icu.sunnyc.navicat.example.config.CaffeineConfig;
 import icu.sunnyc.navicat.example.constant.CommandConstant;
 import icu.sunnyc.navicat.example.entity.bo.CommonResult;
 import icu.sunnyc.navicat.example.entity.vo.ProcessVO;
-import icu.sunnyc.navicat.example.service.DataSourceService;
+import icu.sunnyc.navicat.example.utils.DataSourceCache;
 import icu.sunnyc.navicat.example.utils.DbUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -32,40 +33,39 @@ import java.util.Map;
 public class ProcessController {
 
     @Autowired
-    private DataSourceService dataSourceService;
+    private CaffeineConfig caffeineConfig;
 
-    @GetMapping("/list/{dataSourceId}")
+    @GetMapping("/list/{userId}/{dataSourceId}")
     @ApiOperation(value = "查询指定数据源下所有线程信息")
     @SneakyThrows
-    public CommonResult list(@PathVariable("dataSourceId") String dataSourceId) {
-        try (Connection connection = dataSourceService.connectionByDataSourceId(dataSourceId)) {
-            List<Map<String, Object>> maps = DbUtil.executeQueryList(connection, CommandConstant.QUERY_PROCESS_LIST);
-            ArrayList<ProcessVO> processInfoList = new ArrayList<>();
-            for (Map<String, Object> map : maps) {
-                ProcessVO processInfo = ProcessVO.builder()
-                        .id((Long) map.get("Id"))
-                        .user(String.valueOf(map.get("User")))
-                        .host(String.valueOf(map.get("Host")))
-                        .db(String.valueOf(map.get("db")))
-                        .command((String.valueOf(map.get("Command"))))
-                        .time(String.valueOf(map.get("Time")))
-                        .state(String.valueOf(map.get("State")))
-                        .info(String.valueOf(map.get("info")))
-                        .build();
-                processInfoList.add(processInfo);
-            }
-            return CommonResult.success(processInfoList);
+    public CommonResult list(@PathVariable("userId") String userId, @PathVariable("dataSourceId") String dataSourceId) {
+        Connection connection = DataSourceCache.getConnection(userId, dataSourceId, caffeineConfig.getConnectTimeout());
+        List<Map<String, Object>> maps = DbUtil.executeQueryList(connection, CommandConstant.QUERY_PROCESS_LIST);
+        ArrayList<ProcessVO> processInfoList = new ArrayList<>();
+        for (Map<String, Object> map : maps) {
+            ProcessVO processInfo = ProcessVO.builder()
+                    .id((Long) map.get("Id"))
+                    .user(String.valueOf(map.get("User")))
+                    .host(String.valueOf(map.get("Host")))
+                    .db(String.valueOf(map.get("db")))
+                    .command((String.valueOf(map.get("Command"))))
+                    .time(String.valueOf(map.get("Time")))
+                    .state(String.valueOf(map.get("State")))
+                    .info(String.valueOf(map.get("info")))
+                    .build();
+            processInfoList.add(processInfo);
         }
+        return CommonResult.success(processInfoList);
     }
 
-    @GetMapping("/kill/{dataSourceId}/{processId}")
+    @GetMapping("/kill/{userId}/{dataSourceId}/{processId}")
     @ApiOperation(value = "终止指定线程")
     @SneakyThrows
-    public CommonResult kill(@PathVariable("dataSourceId") String dataSourceId,
+    public CommonResult kill(@PathVariable("userId") String userId,
+                             @PathVariable("dataSourceId") String dataSourceId,
                              @PathVariable("processId") Long processId) {
-        try (Connection connection = dataSourceService.connectionByDataSourceId(dataSourceId)) {
-            boolean success = DbUtil.execute(connection, CommandConstant.KILL_PROCESS + processId);
-            return success ? CommonResult.success().setMessage("线程终止成功") : CommonResult.failed("终止线程失败");
-        }
+        Connection connection = DataSourceCache.getConnection(userId, dataSourceId, caffeineConfig.getConnectTimeout());
+        boolean success = DbUtil.execute(connection, CommandConstant.KILL_PROCESS + processId);
+        return success ? CommonResult.success().setMessage("线程终止成功") : CommonResult.failed("终止线程失败");
     }
 }

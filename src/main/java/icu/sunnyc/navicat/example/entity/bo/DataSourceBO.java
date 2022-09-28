@@ -1,9 +1,6 @@
 package icu.sunnyc.navicat.example.entity.bo;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 import java.sql.Connection;
 
@@ -13,7 +10,6 @@ import java.sql.Connection;
  * @date 2022/9/23 9:03
  */
 @Data
-@Builder
 @ToString
 @EqualsAndHashCode(exclude = { "dataSourceId", "dataSourceName", "connection" })
 public class DataSourceBO {
@@ -29,9 +25,14 @@ public class DataSourceBO {
     private String dataSourceName;
 
     /**
-     * 数据库连接URL
+     * 主机地址
      */
-    private String url;
+    private String host;
+
+    /**
+     * 端口号
+     */
+    private Integer port;
 
     /**
      * 用户名

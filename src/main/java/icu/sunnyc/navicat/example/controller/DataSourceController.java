@@ -1,7 +1,11 @@
 package icu.sunnyc.navicat.example.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.IdUtil;
 import icu.sunnyc.navicat.example.entity.bo.CommonResult;
+import icu.sunnyc.navicat.example.entity.bo.DataSourceBO;
 import icu.sunnyc.navicat.example.entity.dto.DataSourceDTO;
+import icu.sunnyc.navicat.example.utils.DataSourceCache;
 import icu.sunnyc.navicat.example.utils.DbUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Connection;
+import java.util.Set;
 
 /**
  * @author houcheng
@@ -22,10 +27,14 @@ import java.sql.Connection;
 @RequestMapping("/datasource")
 public class DataSourceController {
 
-    @PostMapping("/add")
+    @PostMapping("/add/{userId}")
     @ApiOperation(value = "添加数据源")
-    public CommonResult add(@RequestBody DataSourceDTO dataSource) {
-        return CommonResult.success();
+    public CommonResult add(@PathVariable("userId") String userId, @RequestBody DataSourceDTO dataSource) {
+        DataSourceBO dataSourceBO = new DataSourceBO();
+        BeanUtil.copyProperties(dataSource, dataSourceBO);
+        dataSourceBO.setDataSourceId(IdUtil.objectId());
+        boolean success = DataSourceCache.addDataSource(userId, dataSourceBO);
+        return success ? CommonResult.success() : CommonResult.failed("数据源信息重复，请勿重复添加");
     }
 
     @PostMapping("/connect")
@@ -38,17 +47,11 @@ public class DataSourceController {
         }
     }
 
-    @GetMapping("/connect/{dataSourceId}")
-    @ApiOperation(value = "通过数据源ID连接数据库")
-    @SneakyThrows
-    public CommonResult connect(@PathVariable("dataSourceId") Long dataSourceId) {
-        return CommonResult.success();
-    }
-
-    @GetMapping("/list")
+    @GetMapping("/list/{userId}")
     @ApiOperation(value = "查询所有数据源")
-    public CommonResult list() {
-        return CommonResult.success();
+    public CommonResult list(@PathVariable("userId") String userId) {
+        Set<DataSourceBO> dataSourceSet = DataSourceCache.getDataSourceSet(userId);
+        return CommonResult.success(dataSourceSet);
     }
 
 }
